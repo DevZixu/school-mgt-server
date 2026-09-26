@@ -7,14 +7,4 @@ export const store = {
   results: new Map(),
 };
 
-export const collections = {
-  students: store.students,
-  teachers: store.teachers,
-  classes: store.classes,
-  subjects: store.subjects,
-  results: store.results,
-};
-
-export function records(map) {
-  return [...map.values()];
-}
+export const getMapValues = (map) => [...map.values()];

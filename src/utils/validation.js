@@ -3,7 +3,7 @@ import { AppError } from './errors.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function validateBody(body, schema, { partial = false } = {}) {
+export const validateBody = (body, schema, { partial = false } = {}) => {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     throw new AppError(400, 'Request body must be a JSON object');
   }
@@ -41,17 +41,17 @@ export function validateBody(body, schema, { partial = false } = {}) {
     }
   }
   return body;
-}
+};
 
-export function validateId(id, field = 'id') {
+export const validateId = (id, field = 'id') => {
   if (!isUuid(id)) throw new AppError(400, `${field} must be a valid ID`);
   return id;
-}
+};
 
-export function validateQuery(query, allowed = []) {
+export const validateQuery = (query, allowed = []) => {
   const unexpected = Object.keys(query).find((key) => !allowed.includes(key));
   if (unexpected) throw new AppError(400, `Unexpected query parameter: ${unexpected}`);
   for (const value of Object.values(query)) {
     if (Array.isArray(value)) throw new AppError(400, 'Query parameters must not be repeated');
   }
-}
+};

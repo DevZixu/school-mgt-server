@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { AppError } from '../utils/errors.js';
 
-export function authenticate(req, res, next) {
+export const authenticate = (req, res, next) => {
   const header = req.get('authorization');
   const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return next(new AppError(401, 'Authentication required'));
@@ -13,12 +13,10 @@ export function authenticate(req, res, next) {
   } catch {
     return next(new AppError(401, 'Invalid or expired token'));
   }
-}
+};
 
-export function authorize(...roles) {
-  return (req, res, next) => {
-    if (!req.user) return next(new AppError(401, 'Authentication required'));
-    if (!roles.includes(req.user.role)) return next(new AppError(403, 'Forbidden'));
-    return next();
-  };
-}
+export const authorize = (...roles) => (req, res, next) => {
+  if (!req.user) return next(new AppError(401, 'Authentication required'));
+  if (!roles.includes(req.user.role)) return next(new AppError(403, 'Forbidden'));
+  return next();
+};

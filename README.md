@@ -13,13 +13,18 @@ In-memory collections are `Map` instances keyed by UUID, and resource CRUD behav
 ```sh
 pnpm install
 cp .env.example .env
-```
+  middleware/
+    auth.js
+    errorHandler.js
+    logger.js
 
 Set a unique `JWT_SECRET` of at least 32 characters and change `ADMIN_PASSWORD` before starting the server. The configured admin account is created at startup and is never created through public registration.
 
 ```sh
 pnpm dev
-pnpm test
+  utils/
+    errors.js
+    validation.js
 ```
 
 The server listens on `http://localhost:3000` by default. `GET /health` is a public health check. Each restart starts with empty school records and a newly bootstrapped admin account.
@@ -77,13 +82,18 @@ src/
   server.js
   data/store.js
   controllers/
+    authController.js
     createCrudController.js
-    studentsController.js
-    teachersController.js
-    classesController.js
-    subjectsController.js
-    resultsController.js
+    studentController.js
+    teacherController.js
+    classController.js
+    subjectController.js
+    resultController.js
   middleware/
+  routes/
+    api.js
+    authRoutes.js
+    resourceRoutes.js
   routes/api.js
   utils/
 test/

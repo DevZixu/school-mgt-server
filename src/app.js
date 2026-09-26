@@ -2,7 +2,7 @@ import express from 'express';
 import helmet from 'helmet';
 import api from './routes/api.js';
 import { requestLogger } from './middleware/logger.js';
-import { errorHandler, notFound } from './utils/errors.js';
+import { errorHandler, notFound } from './middleware/errorHandler.js';
 
 const app = express();
 app.disable('x-powered-by');
