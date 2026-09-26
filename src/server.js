@@ -10,9 +10,10 @@ if (!ADMIN_EMAIL || !ADMIN_PASSWORD || ADMIN_PASSWORD.length < 8) {
   throw new Error('ADMIN_EMAIL and an ADMIN_PASSWORD of at least 8 characters are required');
 }
 
-store.users.push({
+const admin = {
   id: randomUUID(), name: 'Administrator', email: ADMIN_EMAIL.toLowerCase(), role: 'admin',
   passwordHash: await bcrypt.hash(ADMIN_PASSWORD, 12), createdAt: new Date().toISOString(),
-});
+};
+store.users.set(admin.id, admin);
 
 app.listen(Number(PORT), () => console.log(`School Management API listening on port ${PORT}`));

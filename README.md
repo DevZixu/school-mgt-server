@@ -1,6 +1,7 @@
 # School Management API
 
 Backend-only School Management REST API built with Node.js and Express. Data is held in memory and resets whenever the process restarts; this project does not connect to a database.
+In-memory collections are `Map` instances keyed by UUID, and resource CRUD behavior is split into student, teacher, class, subject, and result controllers.
 
 ## Requirements
 
@@ -75,6 +76,13 @@ src/
   app.js
   server.js
   data/store.js
+  controllers/
+    createCrudController.js
+    studentsController.js
+    teachersController.js
+    classesController.js
+    subjectsController.js
+    resultsController.js
   middleware/
   routes/api.js
   utils/

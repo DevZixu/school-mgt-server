@@ -18,17 +18,19 @@ let subjectId;
 before(async () => {
   const admin = { id: '00000000-0000-4000-8000-000000000001', name: 'Admin', email: 'admin@test.local', role: 'admin', passwordHash: await bcrypt.hash('AdminPass123', 4), createdAt: new Date().toISOString() };
   const teacher = { id: '00000000-0000-4000-8000-000000000002', name: 'Teacher', email: 'teacher@test.local', role: 'teacher', passwordHash: await bcrypt.hash('TeacherPass123', 4), createdAt: new Date().toISOString() };
-  store.users.push(admin, teacher);
-  store.teachers.push({ id: '00000000-0000-4000-8000-000000000003', name: teacher.name, email: teacher.email, phone: '', subject: '', createdAt: teacher.createdAt, userId: teacher.id });
+  store.users.set(admin.id, admin);
+  store.users.set(teacher.id, teacher);
+  const teacherRecord = { id: '00000000-0000-4000-8000-000000000003', name: teacher.name, email: teacher.email, phone: '', subject: '', createdAt: teacher.createdAt, userId: teacher.id };
+  store.teachers.set(teacherRecord.id, teacherRecord);
   adminToken = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { subject: admin.id });
   teacherToken = jwt.sign({ role: 'teacher' }, process.env.JWT_SECRET, { subject: teacher.id });
 });
 
 beforeEach(() => {
-  store.students.splice(0);
-  store.classes.splice(0);
-  store.subjects.splice(0);
-  store.results.splice(0);
+  store.students.clear();
+  store.classes.clear();
+  store.subjects.clear();
+  store.results.clear();
   studentToken = undefined;
   studentId = undefined;
   subjectId = undefined;
@@ -40,7 +42,7 @@ describe('authentication and role access', () => {
     assert.equal(response.status, 201);
     assert.equal(response.body.data.user.role, 'student');
     assert.equal('passwordHash' in response.body.data.user, false);
-    assert.equal(store.users.at(-1).passwordHash.startsWith('$2'), true);
+    assert.equal([...store.users.values()].at(-1).passwordHash.startsWith('$2'), true);
     studentToken = response.body.data.token;
     studentId = response.body.data.student.id;
     const login = await request(app).post('/api/auth/login').send({ email: 'student@test.local', password: 'StudentPass123' });

@@ -1,10 +1,10 @@
 export const store = {
-  users: [],
-  students: [],
-  teachers: [],
-  classes: [],
-  subjects: [],
-  results: [],
+  users: new Map(),
+  students: new Map(),
+  teachers: new Map(),
+  classes: new Map(),
+  subjects: new Map(),
+  results: new Map(),
 };
 
 export const collections = {
@@ -14,3 +14,7 @@ export const collections = {
   subjects: store.subjects,
   results: store.results,
 };
+
+export function records(map) {
+  return [...map.values()];
+}
