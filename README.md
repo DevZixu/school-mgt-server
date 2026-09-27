@@ -13,25 +13,20 @@ In-memory collections are `Map` instances keyed by UUID, and resource CRUD behav
 ```sh
 pnpm install
 cp .env.example .env
-  middleware/
-    auth.js
-    errorHandler.js
-    logger.js
+```
 
 Set a unique `JWT_SECRET` of at least 32 characters and change `ADMIN_PASSWORD` before starting the server. The configured admin account is created at startup and is never created through public registration.
 
 ```sh
 pnpm dev
-  utils/
-    errors.js
-    validation.js
 ```
 
 The server listens on `http://localhost:3000` by default. `GET /health` is a public health check. Each restart starts with empty school records and a newly bootstrapped admin account.
 
 ## Authentication and roles
 
-Register a student at `POST /api/auth/register`, then log in at `POST /api/auth/login`. Both return a signed bearer token. Include it on protected endpoints as `Authorization: Bearer <token>`. Public registration accepts only the `student` role; a role field of `admin` or `teacher` is rejected. Admins create teacher/student accounts using `POST /api/auth/users`.
+Register a student at `POST /api/auth/register`, then log in at `POST /api/auth/login`. Both set an `HttpOnly` JWT cookie named `authToken`; clients should keep and send cookies automatically. The token is not returned in JSON. Use `POST /api/auth/logout` to clear the cookie. Public registration accepts only the `student` role; a role field of `admin` or `teacher` is rejected. Admins create teacher/student accounts using `POST /api/auth/users`.
+Protected requests must include the cookie automatically (for example, browser clients should use `credentials: 'include'` when calling this API). Do not send a bearer token in the `Authorization` header.
 
 | Role | Permissions |
 | --- | --- |
@@ -49,6 +44,7 @@ All paths below are prefixed with `/api` except `/health`.
 | --- | --- | --- |
 | POST | `/auth/register` | Public, rate limited |
 | POST | `/auth/login` | Public, rate limited |
+| POST | `/auth/logout` | Authenticated |
 | POST | `/auth/users` | Admin |
 | GET/POST | `/students` | Admin; teachers can GET |
 | GET/PUT/DELETE | `/students/:id` | Admin; teachers can GET; students can GET their own record |
@@ -63,7 +59,8 @@ Use UUIDs for record IDs and relationship IDs. Scores are numbers from 0 through
 ## Security and validation
 
 - Passwords are hashed with bcrypt and never returned.
-- JWT signing requires `JWT_SECRET`; tokens expire after two hours.
+- JWT signing requires `JWT_SECRET`; tokens expire after two hours and are stored in an `HttpOnly`, `SameSite=Strict` cookie (`Secure` in production).
+- Authentication uses cookies only; bearer authorization headers are not accepted.
 - Helmet security headers and a 32 KB JSON body limit are enabled.
 - Registration and login are limited to 10 requests per IP per 15 minutes.
 - Request logs include timestamp, method, URL, status, and elapsed time.
@@ -72,7 +69,7 @@ Use UUIDs for record IDs and relationship IDs. Scores are numbers from 0 through
 
 ## API testing
 
-Import [`postman/School-Management-API.postman_collection.json`](postman/School-Management-API.postman_collection.json) into Postman. The collection has a `baseUrl` variable and scripts that retain registered user tokens and created IDs. Login as the configured admin using `.env` values to test administrator routes. The automated tests use Supertest and isolated in-memory state.
+Import [`postman/School-Management-API.postman_collection.json`](postman/School-Management-API.postman_collection.json) into Postman. The collection has a `baseUrl` variable; Postman stores the authentication cookie automatically after register/login. Set the admin credentials in the collection variables to test administrator routes. The automated tests use Supertest and isolated in-memory state.
 
 ## Project layout
 
@@ -90,12 +87,16 @@ src/
     subjectController.js
     resultController.js
   middleware/
+    auth.js
+    errorHandler.js
+    logger.js
   routes/
     api.js
     authRoutes.js
     resourceRoutes.js
-  routes/api.js
   utils/
+    errors.js
+    validation.js
 test/
 postman/
 ```

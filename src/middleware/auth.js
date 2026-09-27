@@ -2,8 +2,7 @@ import jwt from 'jsonwebtoken';
 import { AppError } from '../utils/errors.js';
 
 export const authenticate = (req, res, next) => {
-  const header = req.get('authorization');
-  const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
+  const token = req.cookies?.authToken;
   if (!token) return next(new AppError(401, 'Authentication required'));
 
   try {

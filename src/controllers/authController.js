@@ -11,6 +11,14 @@ const credentialsSchema = {
   password: { type: 'password', required: true },
 };
 
+const authCookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict',
+  maxAge: 2 * 60 * 60 * 1000,
+  path: '/api',
+};
+
 const publicUser = (user) => {
   const { passwordHash, ...safeUser } = user;
   return safeUser;
@@ -19,6 +27,7 @@ const publicUser = (user) => {
 const sendSuccess = (res, data, status = 200) => res.status(status).json({ success: true, data });
 const normalizeEmail = (email) => email.trim().toLowerCase();
 const findUserByEmail = (email) => [...store.users.values()].find((user) => user.email === email);
+const setAuthCookie = (res, user) => res.cookie('authToken', createToken(user), authCookieOptions);
 
 const createUser = async ({ name, email, password, role }) => ({
   id: randomUUID(),
@@ -69,7 +78,8 @@ export const registerStudent = async (req, res) => {
   const student = createUserProfile(user);
   store.users.set(user.id, user);
 
-  return sendSuccess(res, { user: publicUser(user), token: createToken(user), student }, 201);
+  setAuthCookie(res, user);
+  return sendSuccess(res, { user: publicUser(user), student }, 201);
 };
 
 export const loginUser = async (req, res) => {
@@ -82,7 +92,13 @@ export const loginUser = async (req, res) => {
   const passwordMatches = user && await bcrypt.compare(req.body.password, user.passwordHash);
   if (!passwordMatches) throw new AppError(401, 'Invalid email or password');
 
-  return sendSuccess(res, { user: publicUser(user), token: createToken(user) });
+  setAuthCookie(res, user);
+  return sendSuccess(res, { user: publicUser(user) });
+};
+
+export const logoutUser = (req, res) => {
+  res.clearCookie('authToken', { ...authCookieOptions, maxAge: undefined });
+  return sendSuccess(res, { message: 'Logged out successfully' });
 };
 
 export const createUserAccount = async (req, res) => {
