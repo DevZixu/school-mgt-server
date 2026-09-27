@@ -91,7 +91,6 @@ src/
     errorHandler.js
     logger.js
   routes/
-    api.js
     authRoutes.js
     resourceRoutes.js
   utils/
