@@ -59,6 +59,8 @@ describe('authentication and role access', () => {
     const logout = await request(app).post('/api/auth/logout').set('Cookie', login.headers['set-cookie'][0].split(';')[0]);
     assert.equal(logout.status, 200);
     assert.match(logout.headers['set-cookie'][0], /Expires=Thu, 01 Jan 1970/);
+    const afterLogout = await request(app).get('/api/students').set('Cookie', logout.headers['set-cookie'][0].split(';')[0]);
+    assert.equal(afterLogout.status, 401);
   });
 
   it('rejects self-assigned admin and invalid credentials', async () => {
@@ -83,6 +85,9 @@ describe('authentication and role access', () => {
   it('allows admin to provision a teacher but rejects admin role provisioning', async () => {
     const teacher = await request(app).post('/api/auth/users').set('Cookie', `authToken=${adminToken}`).send({ name: 'New Teacher', email: 'newteacher@test.local', password: 'TeacherPass123', role: 'teacher' });
     assert.equal(teacher.status, 201);
+    assert.equal(teacher.body.data.profile.userId, teacher.body.data.user.id);
+    assert.notEqual(teacher.body.data.profile.id, teacher.body.data.user.id);
+    assert.equal(store.teachers.has(teacher.body.data.profile.id), true);
     const forbiddenAdmin = await request(app).post('/api/auth/users').set('Cookie', `authToken=${adminToken}`).send({ name: 'New Admin', email: 'newadmin@test.local', password: 'AdminPass123', role: 'admin' });
     assert.equal(forbiddenAdmin.status, 400);
   });

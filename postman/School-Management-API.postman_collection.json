@@ -46,6 +46,15 @@
           "name": "Register student",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('studentEmail', `amina-${Date.now()}@example.com`);"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -67,7 +76,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Amina Student\",\n  \"email\": \"amina@example.com\",\n  \"password\": \"StudentPass123\"\n}"
+              "raw": "{\n  \"name\": \"Amina Student\",\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"StudentPass123\"\n}"
             },
             "url": "{{baseUrl}}/api/auth/register"
           }
@@ -104,12 +113,21 @@
           "name": "Admin provisions teacher",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('teacherEmail', `tunde-${Date.now()}@example.com`);"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('teacher provisioned', () => pm.response.to.have.status(201));",
-                  "pm.collectionVariables.set('teacherId', pm.response.json().data.id);"
+                  "pm.collectionVariables.set('teacherId', pm.response.json().data.profile.id);"
                 ]
               }
             }
@@ -124,7 +142,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Tunde Teacher\",\n  \"email\": \"tunde@example.com\",\n  \"password\": \"TeacherPass123\",\n  \"role\": \"teacher\"\n}"
+              "raw": "{\n  \"name\": \"Tunde Teacher\",\n  \"email\": \"{{teacherEmail}}\",\n  \"password\": \"TeacherPass123\",\n  \"role\": \"teacher\"\n}"
             },
             "url": "{{baseUrl}}/api/auth/users"
           }
@@ -152,17 +170,47 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"tunde@example.com\",\n  \"password\": \"TeacherPass123\"\n}"
+              "raw": "{\n  \"email\": \"{{teacherEmail}}\",\n  \"password\": \"TeacherPass123\"\n}"
             },
             "url": "{{baseUrl}}/api/auth/login"
           }
         },
         {
           "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged out', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [],
             "url": "{{baseUrl}}/api/auth/logout"
+          }
+        },
+        {
+          "name": "Unauthorized students request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('requires login', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/students"
           }
         }
       ]
@@ -296,7 +344,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"tunde@example.com\",\n  \"password\": \"TeacherPass123\"\n}"
+              "raw": "{\n  \"email\": \"{{teacherEmail}}\",\n  \"password\": \"TeacherPass123\"\n}"
             },
             "url": "{{baseUrl}}/api/auth/login"
           }
@@ -356,6 +404,25 @@
           }
         },
         {
+          "name": "Get result (teacher)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('teacher can view result', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/results/{{resultId}}"
+          }
+        },
+        {
           "name": "Login as student for own records",
           "event": [
             {
@@ -378,7 +445,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"amina@example.com\",\n  \"password\": \"StudentPass123\"\n}"
+              "raw": "{\n  \"email\": \"{{studentEmail}}\",\n  \"password\": \"StudentPass123\"\n}"
             },
             "url": "{{baseUrl}}/api/auth/login"
           }
@@ -400,14 +467,18 @@
           }
         },
         {
-          "name": "Unauthorized students request",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/students"
-          }
-        },
-        {
           "name": "Forbidden student write",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('student write is forbidden', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -469,7 +540,7 @@
           }
         },
         {
-          "name": "Get result (teacher)",
+          "name": "Get result (admin)",
           "request": {
             "method": "GET",
             "header": [],

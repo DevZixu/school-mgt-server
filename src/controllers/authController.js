@@ -111,8 +111,8 @@ export const createUserAccount = async (req, res) => {
   if (findUserByEmail(email)) throw new AppError(409, 'Email is already registered');
 
   const user = await createUser({ ...req.body, email });
-  createUserProfile(user);
+  const profile = createUserProfile(user);
   store.users.set(user.id, user);
 
-  return sendSuccess(res, publicUser(user), 201);
+  return sendSuccess(res, { user: publicUser(user), profile }, 201);
 };
