@@ -1,51 +1,34 @@
-import { validate as isUuid } from 'uuid';
+import { z } from 'zod';
 import { AppError } from './errors.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const validateBody = (body, schema, { partial = false } = {}) => {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    throw new AppError(400, 'Request body must be a JSON object');
-  }
+export const requiredText = z.string().trim().min(1, 'must be a non-empty string');
+export const email = z.string().trim().refine((value) => emailPattern.test(value), 'must be a valid email address');
+export const password = z.string().min(8, 'must be at least 8 characters');
+export const id = z.string().uuid('must be a valid ID');
+export const role = z.enum(['admin', 'teacher', 'student']);
+export const score = z.number().min(0).max(100, 'must be a number between 0 and 100');
 
-  const allowed = new Set(Object.keys(schema));
-  const unexpected = Object.keys(body).find((key) => !allowed.has(key));
-  if (unexpected) throw new AppError(400, `Unexpected field: ${unexpected}`);
-
-  for (const [field, rules] of Object.entries(schema)) {
-    const value = body[field];
-    if (value === undefined) {
-      if (!partial && rules.required) throw new AppError(400, `${field} is required`);
-      continue;
-    }
-    if (rules.type === 'string' && (typeof value !== 'string' || !value.trim())) {
-      throw new AppError(400, `${field} must be a non-empty string`);
-    }
-    if (rules.type === 'email' && (typeof value !== 'string' || !emailPattern.test(value))) {
-      throw new AppError(400, `${field} must be a valid email address`);
-    }
-    if (rules.type === 'password' && (typeof value !== 'string' || value.length < 8)) {
-      throw new AppError(400, `${field} must be at least 8 characters`);
-    }
-    if (rules.type === 'number' && (typeof value !== 'number' || !Number.isFinite(value))) {
-      throw new AppError(400, `${field} must be a number`);
-    }
-    if (rules.type === 'score' && (typeof value !== 'number' || value < 0 || value > 100)) {
-      throw new AppError(400, `${field} must be a number between 0 and 100`);
-    }
-    if (rules.type === 'role' && !['admin', 'teacher', 'student'].includes(value)) {
-      throw new AppError(400, `${field} must be admin, teacher, or student`);
-    }
-    if (rules.type === 'uuid' && (typeof value !== 'string' || !isUuid(value))) {
-      throw new AppError(400, `${field} must be a valid ID`);
-    }
-  }
-  return body;
+const formatError = (error) => {
+  const issue = error.issues[0];
+  const field = issue.path[0];
+  if (field === undefined) return issue.message;
+  if (issue.code === 'invalid_type' && issue.expected === 'string') return `${field} must be a non-empty string`;
+  return `${field} ${issue.message}`;
 };
 
-export const validateId = (id, field = 'id') => {
-  if (!isUuid(id)) throw new AppError(400, `${field} must be a valid ID`);
-  return id;
+export const validateBody = (body, schema, { partial = false } = {}) => {
+  const bodySchema = partial ? schema.partial() : schema;
+  const result = bodySchema.safeParse(body);
+  if (!result.success) throw new AppError(400, formatError(result.error));
+  return result.data;
+};
+
+export const validateId = (value, field = 'id') => {
+  const result = id.safeParse(value);
+  if (!result.success) throw new AppError(400, `${field} must be a valid ID`);
+  return result.data;
 };
 
 export const validateQuery = (query, allowed = []) => {

@@ -1,14 +1,15 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { store } from '../data/store.js';
 import { AppError } from '../utils/errors.js';
-import { validateBody } from '../utils/validation.js';
+import { email, password, requiredText, role, validateBody } from '../utils/validation.js';
 
 const credentialsSchema = {
-  name: { type: 'string', required: true },
-  email: { type: 'email', required: true },
-  password: { type: 'password', required: true },
+  name: requiredText,
+  email,
+  password,
 };
 
 const authCookieOptions = {
@@ -66,7 +67,7 @@ const createToken = (user) => jwt.sign(
 );
 
 export const registerStudent = async (req, res) => {
-  validateBody(req.body, { ...credentialsSchema, role: { type: 'role' } });
+  validateBody(req.body, z.object({ ...credentialsSchema, role: role.optional() }).strict());
   if (req.body.role && req.body.role !== 'student') {
     throw new AppError(403, 'Public registration is limited to student accounts');
   }
@@ -83,10 +84,7 @@ export const registerStudent = async (req, res) => {
 };
 
 export const loginUser = async (req, res) => {
-  validateBody(req.body, {
-    email: { type: 'email', required: true },
-    password: { type: 'password', required: true },
-  });
+  validateBody(req.body, z.object({ email, password }).strict());
 
   const user = findUserByEmail(normalizeEmail(req.body.email));
   const passwordMatches = user && await bcrypt.compare(req.body.password, user.passwordHash);
@@ -102,7 +100,7 @@ export const logoutUser = (req, res) => {
 };
 
 export const createUserAccount = async (req, res) => {
-  validateBody(req.body, { ...credentialsSchema, role: { type: 'role', required: true } });
+  validateBody(req.body, z.object({ ...credentialsSchema, role }).strict());
   if (req.body.role === 'admin') {
     throw new AppError(400, 'Admin accounts are provisioned through environment configuration');
   }

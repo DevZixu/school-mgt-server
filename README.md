@@ -64,7 +64,7 @@ Use UUIDs for record IDs and relationship IDs. Scores are numbers from 0 through
 - Helmet security headers and a 32 KB JSON body limit are enabled.
 - Registration and login are limited to 10 requests per IP per 15 minutes.
 - Request logs include timestamp, method, URL, status, and elapsed time.
-- Request bodies, IDs, query parameters, roles, scores, and record references are validated.
+- Request bodies are validated with Zod; IDs, query parameters, roles, scores, and record references are checked before use.
 - Unhandled errors are returned as a generic 500 response without exposing internals.
 
 ## API testing
